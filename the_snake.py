@@ -1,5 +1,4 @@
-from random import randint
-
+import random
 import pygame
 
 # Константы для размеров поля и сетки
@@ -26,7 +25,8 @@ SPEED = 20
 
 # Настройка игрового окна
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
-pygame.display.set_caption("Змейка")
+# ИСПРАВЛЕНИЕ 2: Одинарные кавычки вместо двойных
+pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
@@ -81,8 +81,9 @@ class Apple(GameObject):
 
         Позиция выравнивается по сетке: координаты кратны GRID_SIZE.
         """
-        x_cell = randint(0, GRID_WIDTH - 1)
-        y_cell = randint(0, GRID_HEIGHT - 1)
+        # ИСПРАВЛЕНИЕ 1: Используем random.randint вместо простого randint
+        x_cell = random.randint(0, GRID_WIDTH - 1)
+        y_cell = random.randint(0, GRID_HEIGHT - 1)
         x = x_cell * GRID_SIZE
         y = y_cell * GRID_SIZE
         self.position = (x, y)
@@ -232,18 +233,7 @@ def handle_keys(game_object):
 
 
 def main():
-    """Запускает игровой цикл.
-
-    Создаёт объекты яблока и змейки, в каждом кадре:
-      - обрабатывает ввод,
-      - обновляет направление,
-      - двигает змейку,
-      - проверяет столкновения и поедание яблока,
-      - отрисовывает кадр.
-
-    Использует partial update — перерисовывает только
-    изменившиеся области экрана.
-    """
+    """Запускает игровой цикл."""
     pygame.init()
     apple = Apple(APPLE_COLOR)
     snake = Snake(SNAKE_COLOR)
@@ -262,18 +252,14 @@ def main():
         snake.update_direction()
         snake.move()
 
-        dirty_rects = []
+        dirty_rects = snake.draw()
 
         # Проверка: змейка съела яблоко
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            old_apple_rect = pygame.Rect(
-                apple.position, (GRID_SIZE, GRID_SIZE)
-            )
-            pygame.draw.rect(
-                screen, BOARD_BACKGROUND_COLOR, old_apple_rect
-            )
-            dirty_rects.append(old_apple_rect)
+            old_apple = pygame.Rect(apple.position, (GRID_SIZE, GRID_SIZE))
+            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, old_apple)
+            dirty_rects.append(old_apple)
             apple.randomize_position()
             dirty_rects.extend(apple.draw())
 
@@ -282,7 +268,7 @@ def main():
         if head in snake.positions[1:]:
             running = False
 
-        dirty_rects.extend(snake.draw())
+        # Обновляем только измененные области
         pygame.display.update(dirty_rects)
 
         clock.tick(SPEED)
@@ -290,5 +276,5 @@ def main():
     pygame.quit()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
