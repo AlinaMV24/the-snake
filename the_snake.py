@@ -1,5 +1,7 @@
+import random
+
 import pygame
-from random import randint
+
 
 # Константы для размеров поля и сетки
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -63,8 +65,8 @@ class Apple(GameObject):
 
     def randomize_position(self):
         """Перемещает яблоко в случайную клетку игрового поля."""
-        x_cell = randint(0, GRID_WIDTH - 1)
-        y_cell = randint(0, GRID_HEIGHT - 1)
+        x_cell = random.randint(0, GRID_WIDTH - 1)
+        y_cell = random.randint(0, GRID_HEIGHT - 1)
         x = x_cell * GRID_SIZE
         y = y_cell * GRID_SIZE
         self.position = (x, y)
@@ -101,7 +103,7 @@ class Snake(GameObject):
 
     def update_direction(self):
         """Применяет сохранённое next_direction к direction."""
-        if self.next_direction:
+        if self.next_direction is not None:
             self.direction = self.next_direction
             self.next_direction = None
 
@@ -117,7 +119,7 @@ class Snake(GameObject):
         pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
         dirty_rects.append(head_rect)
 
-        if self.last:
+        if self.last is not None:
             last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
             dirty_rects.append(last_rect)
