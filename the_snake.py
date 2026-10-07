@@ -1,7 +1,7 @@
 import random
+
 import pygame
 
-# Константы для размеров поля и сетки
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 GRID_SIZE = 20
@@ -140,21 +140,12 @@ class Snake(GameObject):
             self.next_direction = None
 
     def draw(self):
-        """Отрисовывает изменившиеся сегменты и затирает хвост.
-
-        Вместо перерисовки всей змейки каждый кадр рисует только
-        новую голову и затирает старый хвост цветом фона.
-
-        Returns:
-            list[pygame.Rect]: Список прямоугольников, которые нужно обновить.
-        """
-        dirty_rects = []
-
+        """Отрисовывает изменившиеся сегменты и затирает хвост."""
         # Рисуем голову
         head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, head_rect)
         pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
-        dirty_rects.append(head_rect)
+        dirty_rects = [head_rect]
 
         # Если есть хвост, который нужно стереть
         if self.last:
