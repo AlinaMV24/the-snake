@@ -1,5 +1,6 @@
 
 import random
+
 import pygame
 
 
@@ -112,12 +113,11 @@ class Snake(GameObject):
 
         :return: Список Rect, которые нужно обновить на экране.
         """
-        dirty_rects = []
-
         head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, head_rect)
         pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
-        dirty_rects.append(head_rect)
+
+        dirty_rects = [head_rect]
 
         if self.last is not None:
             last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
