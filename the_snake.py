@@ -37,15 +37,13 @@ class GameObject:
     Метод draw переопределяется в классах-наследниках.
     """
 
-    def __init__(self, body_color=(0, 0, 0)):
+    def __init__(self, body_color=BOARD_BACKGROUND_COLOR):
         """Инициализирует объект с позицией в центре экрана.
 
         Args:
             body_color (tuple[int, int, int]): RGB-кортеж цвета объекта.
         """
-        start_x = SCREEN_WIDTH // 2
-        start_y = SCREEN_HEIGHT // 2
-        self.position = (start_x, start_y)
+        self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.body_color = body_color
 
     def draw(self):
@@ -53,11 +51,8 @@ class GameObject:
 
         Базовая реализация ничего не делает.
         Переопределяется в классах-наследниках.
-
-        Returns:
-            list[pygame.Rect]: Список прямоугольников для partial update.
         """
-        return []
+        pass
 
 
 class Apple(GameObject):
@@ -76,17 +71,16 @@ class Apple(GameObject):
         super().__init__(body_color)
         self.randomize_position()
 
-    def randomize_position(self):
-        """Перемещает яблоко в случайную клетку игрового поля.
-
-        Позиция выравнивается по сетке: координаты кратны GRID_SIZE.
-        """
-        # ИСПРАВЛЕНИЕ 1: Используем random.randint вместо простого randint
-        x_cell = random.randint(0, GRID_WIDTH - 1)
-        y_cell = random.randint(0, GRID_HEIGHT - 1)
-        x = x_cell * GRID_SIZE
-        y = y_cell * GRID_SIZE
-        self.position = (x, y)
+    def randomize_position(self, snake_positions=None):
+        """Перемещает яблоко в случайную клетку игрового поля."""
+        while True:
+            new_position = (
+                random.randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                random.randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            )
+            if snake_positions is None or new_position not in snake_positions:
+                self.position = new_position
+                break
 
     def draw(self):
         """Отрисовывает яблоко как квадрат с обводкой.
@@ -97,7 +91,6 @@ class Apple(GameObject):
         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
-        return [rect]
 
 
 class Snake(GameObject):
@@ -115,11 +108,7 @@ class Snake(GameObject):
             body_color (tuple[int, int, int]): RGB-кортеж цвета змейки.
         """
         super().__init__(body_color)
-        self.positions = [self.position]
-        self.length = 1
-        self.direction = RIGHT
-        self.next_direction = self.direction
-        self.last = None
+        self.reset()
 
     def get_head_position(self):
         """Возвращает координаты головы змейки (первый элемент списка).
@@ -142,25 +131,10 @@ class Snake(GameObject):
     def draw(self):
         """Отрисовывает изменившиеся сегменты и затирает хвост."""
         # Рисуем голову
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
-        dirty_rects = [head_rect]
-
-        # Если есть хвост, который нужно стереть
-        if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
-            dirty_rects.append(last_rect)
-
-        # Рисуем шею (второй сегмент), чтобы не было «дырок» при движении
-        if len(self.positions) > 1:
-            neck_rect = pygame.Rect(self.positions[1], (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, self.body_color, neck_rect)
-            pygame.draw.rect(screen, BORDER_COLOR, neck_rect, 1)
-            dirty_rects.append(neck_rect)
-
-        return dirty_rects
+        for position in self.positions:
+            rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
+            pygame.draw.rect(screen, self.body_color, rect)
+            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
     def move(self):
         """Сдвигает змейку на одну клетку в текущем направлении.
@@ -170,20 +144,16 @@ class Snake(GameObject):
         Координаты рассчитываются с телепортацией через границы.
         """
         head_x, head_y = self.get_head_position()
-        dx, dy = self.direction
-        new_x = head_x + dx * GRID_SIZE
-        new_y = head_y + dy * GRID_SIZE
-
-        # Телепортация через границы (сквозное поле)
+        direction_x, direction_y = self.direction
+        new_x = head_x + direction_x * GRID_SIZE
+        new_y = head_y + direction_y * GRID_SIZE
         new_x = (new_x + SCREEN_WIDTH) % SCREEN_WIDTH
         new_y = (new_y + SCREEN_HEIGHT) % SCREEN_HEIGHT
 
         self.positions.insert(0, (new_x, new_y))
 
         if len(self.positions) > self.length:
-            self.last = self.positions.pop()
-        else:
-            self.last = None
+            self.positions.pop()
 
     def reset(self):
         """Сбрасывает змейку в начальное состояние после проигрыша."""
@@ -191,7 +161,6 @@ class Snake(GameObject):
         self.length = 1
         self.direction = RIGHT
         self.next_direction = self.direction
-        self.last = None
 
 
 def handle_keys(game_object):
@@ -242,25 +211,19 @@ def main():
 
         snake.update_direction()
         snake.move()
-
-        dirty_rects = snake.draw()
-
         # Проверка: змейка съела яблоко
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            old_apple = pygame.Rect(apple.position, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, old_apple)
-            dirty_rects.append(old_apple)
-            apple.randomize_position()
-            dirty_rects.extend(apple.draw())
-
-        # Проверка: столкновение с собственным телом
-        head = snake.get_head_position()
-        if head in snake.positions[1:]:
+            apple.randomize_position(snake.positions)
+        # Проверка: столкновение с собственным телом (ИСПРАВЛЕНО на elif)
+        elif snake.get_head_position() in snake.positions[1:]:
             running = False
 
-        # Обновляем только измененные области
-        pygame.display.update(dirty_rects)
+        # ПОЛНАЯ очистка экрана и перерисовка каждый кадр
+        screen.fill(BOARD_BACKGROUND_COLOR)
+        apple.draw()
+        snake.draw()
+        pygame.display.update()
 
         clock.tick(SPEED)
 
