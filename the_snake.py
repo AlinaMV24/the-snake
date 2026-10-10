@@ -62,25 +62,32 @@ class Apple(GameObject):
     При съедании змейкой перемещается в новую случайную позицию.
     """
 
-    def __init__(self, body_color=APPLE_COLOR):
+    def __init__(self, body_color=APPLE_COLOR, snake_positions=None):
         """Инициализирует яблоко и задаёт ему случайную позицию.
 
         Args:
             body_color (tuple[int, int, int]): RGB-кортеж цвета яблока.
         """
         super().__init__(body_color)
-        self.randomize_position()
+        self.randomize_position(snake_positions)
 
     def randomize_position(self, snake_positions=None):
         """Перемещает яблоко в случайную клетку игрового поля."""
-        while True:
+        if snake_positions is None:
+            snake_positions = []
+
+        new_position = (
+            random.randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+            random.randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+        )
+
+        while new_position in snake_positions:
             new_position = (
                 random.randint(0, GRID_WIDTH - 1) * GRID_SIZE,
                 random.randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             )
-            if snake_positions is None or new_position not in snake_positions:
-                self.position = new_position
-                break
+
+        self.position = new_position
 
     def draw(self):
         """Отрисовывает яблоко как квадрат с обводкой.
